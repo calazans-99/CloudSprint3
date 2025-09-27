@@ -1,4 +1,3 @@
-
 # CloudSprint3 · Spring Boot + Azure SQL · DevOps Sprint
 
 <p align="center">
@@ -8,7 +7,8 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
-API simples para gestão de **motos** (CRUD) construída com **Spring Boot** e banco **Azure SQL**. O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observabilidade usa **Application Insights**.
+API simples para gestão de **motos** (CRUD) construída com **Spring Boot** e banco **Azure SQL**.  
+O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observabilidade usa **Application Insights**.
 
 > **URL pública** (exemplo): `https://cloudsprint3-rm556620.azurewebsites.net`  
 > **Swagger UI**: `/swagger-ui/index.html` · **OpenAPI**: `/v3/api-docs`
@@ -44,21 +44,21 @@ flowchart LR
   subgraph Azure["Azure"]
     subgraph RG["Resource Group"]
       ASP[App Service Plan]
-      WA[Web App<br/>cloudsprint3-rm556620]
+      WEBAPP[Web App<br/>cloudsprint3-rm556620]
       AI[Application Insights]
       SQL[Azure SQL Database<br/>dimdimdb]
     end
   end
 
-  User[Cliente/Browser]
+  USER[Cliente/Browser]
 
-  User -->|HTTP 80/443| WA
-  GH -->|Publish Profile (secret)| WA
-  WA -->|JDBC SQL| SQL
-  WA --> AI
+  USER -->|HTTP 80/443| WEBAPP
+  GH -->|Publish Profile secret| WEBAPP
+  WEBAPP -->|JDBC SQL| SQL
+  WEBAPP --> AI
 ```
 
-> Para múltiplas linhas no Mermaid em nós, use `<br/>` nos rótulos.
+> Dica: para múltiplas linhas no Mermaid em nós, use `<br/>` nos rótulos.
 
 ---
 
@@ -136,10 +136,11 @@ java -jar target/sprint3-sqlserver-0.0.1-SNAPSHOT.jar
    - `SPRING_DATASOURCE_URL`
    - `SPRING_DATASOURCE_USERNAME`
    - `SPRING_DATASOURCE_PASSWORD`
+   - (Opcional) `APPLICATIONINSIGHTS_CONNECTION_STRING`
 
-3) **Application Insights**: variável `APPLICATIONINSIGHTS_CONNECTION_STRING` (opcional, recomendada).
+3) **Firewall do Azure SQL**: libere acesso para o App Service (ou use Private Endpoint).
 
-> A criação automatizada (RG, SQL, WebApp, Insights) pode ser feita com o script `deploy-cloud-*.sh` usado na disciplina (CLI Azure).
+> A criação automatizada (RG, SQL, WebApp, Insights) pode ser feita com o script `deploy-cloud-*.sh`.
 
 ---
 
@@ -188,7 +189,7 @@ CREATE TABLE IF NOT EXISTS motos (
 - Baixe a coleção pronta: **CloudSprint3.postman_collection.json** (neste repositório).  
 - Defina a variável `host` no Postman: `https://cloudsprint3-rm556620.azurewebsites.net` (ou `http://localhost:8080`).
 
-> **Dica:** Use environments para alternar entre **local** e **azure**.
+> Use **environments** para alternar entre **local** e **azure**.
 
 ---
 
@@ -241,13 +242,13 @@ DELETE {{host}}/api/v1/motos/1
   (Opcional: crie um `HomeController` que redireciona `/` → Swagger.)
 
 - **Erro “no main manifest attribute” no Azure**:  
-  Garanta que o jar foi gerado pelo `spring-boot-maven-plugin` (o workflow já faz isso) e que o deploy apontou para `target/*.jar`.
+  Garanta que o jar foi gerado pelo `spring-boot-maven-plugin` e que o deploy apontou para `target/*.jar`.
 
 - **Sem conexão com banco**:  
-  Revise `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`. No Azure SQL, confirme a **regra de firewall** para liberar acesso do App Service.
+  Revise `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`. No Azure SQL, confirme a **regra de firewall**.
 
 - **H2 falha com tipos do SQL Server**:  
-  Rode com `-Dspring-boot.run.profiles=h2` ou use um script específico para H2.
+  Rode com `-Dspring-boot.run.profiles=h2` ou use script específico para H2.
 
 ---
 
