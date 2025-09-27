@@ -1,24 +1,39 @@
 
-# CloudSprint3 — Spring Boot + Azure SQL + GitHub Actions
+# CloudSprint3 · Spring Boot + Azure SQL · DevOps Sprint
 
-> API de motos para a Sprint 3 (DevOps). Deploy automático no **Azure App Service** com banco **Azure SQL**.
+<p align="center">
+  <img alt="Java" src="https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white">
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.3.5-6DB33F?logo=springboot&logoColor=white">
+  <img alt="Build" src="https://img.shields.io/github/actions/workflow/status/calazans-99/CloudSprint3/main_cloudsprint3-rm556620.yml?label=CI%2FCD">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
-## Endpoints
-- `GET /api/v1/motos` – lista todas
-- `GET /api/v1/motos/{id}` – busca por id
-- `POST /api/v1/motos` – cria
-- `PUT /api/v1/motos/{id}` – atualiza
-- `DELETE /api/v1/motos/{id}` – remove
+API simples para gestão de **motos** (CRUD) construída com **Spring Boot** e banco **Azure SQL**. O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observabilidade usa **Application Insights**.
 
-Swagger: `https://<SEU_APP>.azurewebsites.net/swagger-ui/index.html`  
-OpenAPI JSON: `/v3/api-docs`
+> **URL pública** (exemplo): `https://cloudsprint3-rm556620.azurewebsites.net`  
+> **Swagger UI**: `/swagger-ui/index.html` · **OpenAPI**: `/v3/api-docs`
 
 ---
 
-## Arquitetura (diagramas)
+## 📚 Sumário
+
+- [Arquitetura](#-arquitetura)
+- [Tecnologias](#-tecnologias)
+- [Endpoints](#-endpoints)
+- [Como executar localmente](#-como-executar-localmente)
+- [Configuração no Azure](#-configuração-no-azure)
+- [Fluxo de CI/CD](#-fluxo-de-cicd)
+- [Modelo de dados](#-modelo-de-dados)
+- [Coleção Postman](#-coleção-postman)
+- [Exemplos de requisição](#-exemplos-de-requisição)
+- [Resolução de problemas](#-resolução-de-problemas)
+- [Licença](#-licença)
+
+---
+
+## 🏗 Arquitetura
 
 ### Diagrama lógico (Mermaid)
-> Visualização da app no Azure com Azure SQL e GitHub Actions.
 
 ```mermaid
 flowchart LR
@@ -38,14 +53,112 @@ flowchart LR
   User[Cliente/Browser]
 
   User -->|HTTP 80/443| WA
-  GH -->|CI/CD Publish Profile| WA
+  GH -->|Publish Profile (secret)| WA
   WA -->|JDBC SQL| SQL
   WA --> AI
 ```
 
-### Diagrama ER (Mermaid)
-> Modelo mínimo usado pela API.
+> Para múltiplas linhas no Mermaid em nós, use `<br/>` nos rótulos.
 
+---
+
+## 🧰 Tecnologias
+
+- **Java 17** · **Spring Boot 3.3.5**
+- **Spring Web**, **Validation**, **Spring Data JPA**
+- **Driver** `com.microsoft.sqlserver:mssql-jdbc`
+- **Swagger/OpenAPI** via `springdoc-openapi`
+- **H2** para testes locais (profile `h2`)
+- **Azure**: App Service (Linux), Azure SQL, Application Insights
+- **CI/CD**: GitHub Actions (deploy por Publish Profile)
+
+---
+
+## 🔗 Endpoints
+
+Base path: `/api/v1`
+
+| Método | Caminho              | Descrição               |
+|-------:|----------------------|-------------------------|
+| GET    | `/motos`             | Lista todas             |
+| GET    | `/motos/{id}`        | Busca por ID            |
+| POST   | `/motos`             | Cria uma moto           |
+| PUT    | `/motos/{id}`        | Atualiza uma moto       |
+| DELETE | `/motos/{id}`        | Remove uma moto         |
+
+**Modelo (request/response):**
+```json
+{
+  "id": 1,
+  "placa": "ABC1D23",
+  "modelo": "Honda CG 160",
+  "status": "ATIVA",
+  "createdAt": "2025-09-27T12:34:56-03:00"
+}
+```
+
+---
+
+## ▶️ Como executar localmente
+
+### Pré-requisitos
+- JDK 17+
+- Maven 3.9+
+
+### Usando H2 (memória)
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=h2
+# Swagger: http://localhost:8080/swagger-ui/index.html
+# H2 Console: http://localhost:8080/h2-console  (JDBC URL: jdbc:h2:mem:testdb)
+```
+
+### Usando SQL Server (local/Azure)
+Configure `src/main/resources/application.properties` (ou via variáveis de ambiente):
+```
+spring.datasource.url=jdbc:sqlserver://<server>.database.windows.net:1433;database=<db>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+spring.datasource.username=<usuario>
+spring.datasource.password=<senha>
+spring.jpa.hibernate.ddl-auto=update
+```
+
+Execute:
+```bash
+mvn clean package -DskipTests
+java -jar target/sprint3-sqlserver-0.0.1-SNAPSHOT.jar
+```
+
+---
+
+## ☁️ Configuração no Azure
+
+1) **App Service (Linux)** e **Azure SQL** (via CLI/Portal).  
+2) **App Settings** no App Service:
+   - `SPRING_DATASOURCE_URL`
+   - `SPRING_DATASOURCE_USERNAME`
+   - `SPRING_DATASOURCE_PASSWORD`
+
+3) **Application Insights**: variável `APPLICATIONINSIGHTS_CONNECTION_STRING` (opcional, recomendada).
+
+> A criação automatizada (RG, SQL, WebApp, Insights) pode ser feita com o script `deploy-cloud-*.sh` usado na disciplina (CLI Azure).
+
+---
+
+## 🚀 Fluxo de CI/CD
+
+GitHub Action (`.github/workflows/main_cloudsprint3-rm556620.yml`):
+
+- **Build:** `mvn -B -DskipTests package`
+- **Artefato:** `target/*.jar`
+- **Deploy:** `azure/webapps-deploy@v2` usando o secret `AZURE_WEBAPP_PUBLISH_PROFILE`  
+  (pegue o XML em **App Service → Get publish profile** e salve como secret).
+
+> O App Service executa o jar como `app.jar`. O Manifest do jar é configurado pelo `spring-boot-maven-plugin`.
+
+---
+
+## 🗃 Modelo de dados
+
+### Diagrama ER (Mermaid)
 ```mermaid
 erDiagram
   MOTOS {
@@ -57,14 +170,32 @@ erDiagram
   }
 ```
 
-> **Dica GitHub**: em Mermaid use **```` ```mermaid ````** e quebras de linha com `<br/>` dentro dos rótulos quando quiser múltiplas linhas.
+### SQL de referência
+```sql
+CREATE TABLE IF NOT EXISTS motos (
+  id BIGINT IDENTITY(1,1) PRIMARY KEY,
+  placa VARCHAR(10) NOT NULL UNIQUE,
+  modelo VARCHAR(80) NOT NULL,
+  status VARCHAR(30) NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
+);
+```
 
 ---
 
-## Exemplos (Postman)
+## 🧪 Coleção Postman
 
-### 1) Criar moto
-```
+- Baixe a coleção pronta: **CloudSprint3.postman_collection.json** (neste repositório).  
+- Defina a variável `host` no Postman: `https://cloudsprint3-rm556620.azurewebsites.net` (ou `http://localhost:8080`).
+
+> **Dica:** Use environments para alternar entre **local** e **azure**.
+
+---
+
+## 📬 Exemplos de requisição
+
+### Criar
+```http
 POST {{host}}/api/v1/motos
 Content-Type: application/json
 
@@ -74,29 +205,19 @@ Content-Type: application/json
   "status": "ATIVA"
 }
 ```
-**Resposta 201**
-```json
-{
-  "id": 1,
-  "placa": "ABC1D23",
-  "modelo": "Honda CG 160",
-  "status": "ATIVA",
-  "createdAt": "2025-09-27T12:34:56-03:00"
-}
-```
 
-### 2) Listar
-```
+### Listar
+```http
 GET {{host}}/api/v1/motos
 ```
 
-### 3) Buscar por id
-```
+### Buscar por ID
+```http
 GET {{host}}/api/v1/motos/1
 ```
 
-### 4) Atualizar
-```
+### Atualizar
+```http
 PUT {{host}}/api/v1/motos/1
 Content-Type: application/json
 
@@ -107,34 +228,29 @@ Content-Type: application/json
 }
 ```
 
-### 5) Remover
-```
+### Remover
+```http
 DELETE {{host}}/api/v1/motos/1
 ```
 
-> Importe a coleção: `CloudSprint3.postman_collection.json`
+---
+
+## 🛠 Resolução de problemas
+
+- **Swagger abre mas a raiz `"/"` dá 404**: use `/swagger-ui/index.html`.  
+  (Opcional: crie um `HomeController` que redireciona `/` → Swagger.)
+
+- **Erro “no main manifest attribute” no Azure**:  
+  Garanta que o jar foi gerado pelo `spring-boot-maven-plugin` (o workflow já faz isso) e que o deploy apontou para `target/*.jar`.
+
+- **Sem conexão com banco**:  
+  Revise `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`. No Azure SQL, confirme a **regra de firewall** para liberar acesso do App Service.
+
+- **H2 falha com tipos do SQL Server**:  
+  Rode com `-Dspring-boot.run.profiles=h2` ou use um script específico para H2.
 
 ---
 
-## Deploy (resumo)
+## 📄 Licença
 
-1. Configure os _app settings_ no App Service:
-   - `SPRING_DATASOURCE_URL`
-   - `SPRING_DATASOURCE_USERNAME`
-   - `SPRING_DATASOURCE_PASSWORD`
-
-2. Crie o *publish profile* (XML) e adicione em **GitHub Secrets** como `AZURE_WEBAPP_PUBLISH_PROFILE`.
-
-3. O workflow compila (`mvn -DskipTests package`) e faz upload do `target/*.jar`.
-
----
-
-## Executar local (H2)
-```
-mvn spring-boot:run -Dspring-boot.run.profiles=h2
-```
-
----
-
-## Licença
-MIT
+MIT — faça bom uso! :)
