@@ -1,33 +1,40 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: 'Build and deploy JAR app to Azure Web App: cloudsprint3-rm556620'
+name: Build and deploy to Azure Web App - cloudsprint3-rm556620
 
 on:
   push:
-    branches:
-    - main
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Java version
-      uses: actions/setup-java@v1
-      with:
-        java-version: '17'
-    
-    - name: Build with Maven
-      run: mvn clean install
 
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with: 
-        app-name: 'cloudsprint3-rm556620'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_3a5abe6101df4ef0a826f57c3895e26c }}
-        package: '${{ github.workspace }}/target/*.jar'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Temurin) with Maven cache
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # Gera o fat jar (Spring Boot) — tests pulados p/ acelerar
+      - name: Build with Maven (skip tests)
+        run: mvn -B -DskipTests package
+
+      # Escolhe o fat jar (evita *original*.jar)
+      - name: Find Spring Boot fat JAR
+        id: findjar
+        run: |
+          ls -la target
+          BOOT_JAR=$(ls target/*.jar | grep -v original | head -n 1)
+          echo "bootjar=$BOOT_JAR" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'cloudsprint3-rm556620'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: '${{ steps.findjar.outputs.bootjar }}'
