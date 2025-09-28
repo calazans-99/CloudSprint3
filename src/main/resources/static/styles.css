@@ -1,0 +1,71 @@
+:root{
+  /* Paleta clara estilo Bootstrap */
+  --bg:#f8f9fb;
+  --panel:#ffffff;
+  --muted:#6c757d;
+  --text:#212529;
+  --accent:#0d6efd;    /* primária */
+  --ok:#198754;        /* success */
+  --warn:#ffc107;      /* warning */
+  --err:#dc3545;       /* danger */
+  --border:#dee2e6;
+  --chip:#f0f2f5;
+  --shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+/* Reset básico */
+*{box-sizing:border-box}
+html,body{
+  margin:0;padding:0;
+  background:var(--bg);color:var(--text);
+  font:15px/1.5 system-ui,Segoe UI,Roboto,Arial
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Header fixo */
+header.navbar{z-index:10}
+
+/* Card environment */
+.env{background:var(--panel);box-shadow:var(--shadow)}
+.env label{font-size:.85rem;font-weight:600;color:var(--muted)}
+.env input.form-control{
+  border-radius:10px;
+  transition:border-color .15s,box-shadow .15s
+}
+.env input.form-control:focus{
+  border-color:#b6d4fe;
+  box-shadow:0 0 0 .25rem rgba(13,110,253,.15)
+}
+.env .btn{border-radius:10px}
+
+/* Cards de operação */
+.card{border-radius:14px}
+.card-header{font-weight:600}
+.card-header code{color:var(--muted)}
+.card-header .badge{font-size:.75rem;padding:.35em .6em}
+
+.btn i{margin-right:.35rem}
+
+/* Consoles */
+.console{
+  background:#0f141a;color:#ecf2f8;
+  border-radius:.5rem;padding:1rem;
+  border:1px solid #1c2430;
+  overflow:auto;min-height:120px
+}
+
+/* Tabela de GET all */
+.table td,.table th{vertical-align:middle}
+.badge{text-transform:uppercase;letter-spacing:.02em}
+
+/* Toast escuro */
+.toast{border-radius:.75rem}
+
+/* Footer */
+footer{font-size:.9rem}
+
+/* Responsivo */
+@media (max-width:576px){
+  .navbar .container{gap:.75rem}
+}

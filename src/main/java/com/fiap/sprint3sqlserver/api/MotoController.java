@@ -5,14 +5,20 @@ import com.fiap.sprint3sqlserver.api.dto.MotoResponse;
 import com.fiap.sprint3sqlserver.domain.Moto;
 import com.fiap.sprint3sqlserver.repository.MotoRepository;
 import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.CONFLICT;
+
 @RestController
-@RequestMapping("/api/v1/motos")
+@RequestMapping(value = "/api/v1/motos", produces = MediaType.APPLICATION_JSON_VALUE)
 public class MotoController {
 
     private final MotoRepository repo;
@@ -21,46 +27,70 @@ public class MotoController {
         this.repo = repo;
     }
 
+    // LIST
     @GetMapping
     public List<MotoResponse> list() {
-        return repo.findAll().stream()
-                .map(m -> new MotoResponse(m.getId(), m.getPlaca(), m.getModelo(), m.getStatus()))
-                .toList();
+        return repo.findAll().stream().map(this::toResponse).toList();
     }
 
+    // GET ONE
     @GetMapping("/{id}")
     public ResponseEntity<MotoResponse> get(@PathVariable Long id) {
         return repo.findById(id)
-                .map(m -> ResponseEntity.ok(new MotoResponse(m.getId(), m.getPlaca(), m.getModelo(), m.getStatus())))
+                .map(m -> ResponseEntity.ok(toResponse(m)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+    // CREATE
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MotoResponse> create(@Valid @RequestBody MotoRequest req) {
-        if (repo.findByPlaca(req.placa()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+        Moto m = new Moto(
+                normalize(req.placa()),
+                safeTrim(req.modelo()),
+                safeTrim(req.status())
+        );
+        try {
+            m = repo.save(m);
+        } catch (DataIntegrityViolationException e) {
+            // ÍNDICE ÚNICO de placa violado -> 409
+            throw new ResponseStatusException(CONFLICT, "Placa já cadastrada");
         }
-        Moto saved = repo.save(new Moto(req.placa(), req.modelo(), req.status()));
         return ResponseEntity
-                .created(URI.create("/api/v1/motos/" + saved.getId()))
-                .body(new MotoResponse(saved.getId(), saved.getPlaca(), saved.getModelo(), saved.getStatus()));
+                .created(URI.create("/api/v1/motos/" + m.getId()))
+                .body(toResponse(m));
     }
 
-    @PutMapping("/{id}")
+    // UPDATE
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional
     public ResponseEntity<MotoResponse> update(@PathVariable Long id, @Valid @RequestBody MotoRequest req) {
-        return repo.findById(id).map(existing -> {
-            existing.setPlaca(req.placa());
-            existing.setModelo(req.modelo());
-            existing.setStatus(req.status());
-            Moto saved = repo.save(existing);
-            return ResponseEntity.ok(new MotoResponse(saved.getId(), saved.getPlaca(), saved.getModelo(), saved.getStatus()));
-        }).orElse(ResponseEntity.notFound().build());
+        return repo.findById(id)
+                .map(m -> {
+                    m.setPlaca(normalize(req.placa()));
+                    m.setModelo(safeTrim(req.modelo()));
+                    m.setStatus(safeTrim(req.status()));
+                    try {
+                        Moto saved = repo.save(m);
+                        return ResponseEntity.ok(toResponse(saved));
+                    } catch (DataIntegrityViolationException e) {
+                        throw new ResponseStatusException(CONFLICT, "Placa já cadastrada");
+                    }
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!repo.existsById(id)) return ResponseEntity.notFound().build();
         repo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    // --- helpers ---
+    private MotoResponse toResponse(Moto m) {
+        return new MotoResponse(m.getId(), m.getPlaca(), m.getModelo(), m.getStatus());
+    }
+    private static String safeTrim(String s) { return s == null ? null : s.trim(); }
+    private static String normalize(String placa) { return placa == null ? null : placa.trim().toUpperCase(); }
 }

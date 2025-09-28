@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <title>CloudSprint3 • API Motos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="navbar navbar-light bg-white shadow-sm sticky-top">
+    <div class="container py-2">
+        <h1 class="h4 mb-0 fw-bold">CloudSprint3 • API Motos</h1>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="/index"><i class="bi bi-house-door"></i> Início</a>
+            <a class="btn btn-outline-dark btn-sm" href="/swagger-ui/index.html" target="_blank"><i class="bi bi-braces"></i> Swagger</a>
+            <a class="btn btn-outline-dark btn-sm" href="/h2-console" target="_blank"><i class="bi bi-database"></i> H2</a>
+        </div>
+    </div>
+</header>
+
+<main class="container my-4">
+    <!-- Ambiente -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h5 mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Ambiente</h2>
+                <button id="saveEnv" class="btn btn-primary btn-sm"><i class="bi bi-save"></i> Salvar preferências</button>
+            </div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Base URL</label>
+                    <input id="baseUrl" class="form-control" placeholder="ex.: https://seu-app.azurewebsites.net">
+                    <div class="form-text">Deixe vazio para usar o mesmo host.</div>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label">Usuário (Basic)</label>
+                    <input id="user" class="form-control" value="admin">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label">Senha (Basic)</label>
+                    <input id="pass" class="form-control" type="password" value="admin">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operações -->
+    <div class="row g-4">
+        <!-- GET ALL -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <span class="badge text-bg-info">GET</span>
+                    <code>/api/v1/motos</code>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Lista todas as motos.</p>
+                    <button class="btn btn-outline-info" data-op="list">
+                        <i class="bi bi-play-fill"></i> Executar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GET BY ID -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <span class="badge text-bg-info">GET</span>
+                    <code>/api/v1/motos/{id}</code>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">ID</label>
+                        <input id="getId" type="number" min="1" class="form-control" placeholder="1" />
+                    </div>
+                    <button class="btn btn-outline-info" data-op="get">
+                        <i class="bi bi-search"></i> Buscar por ID
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- POST -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <span class="badge text-bg-success">POST</span>
+                    <code>/api/v1/motos</code>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Placa</label>
+                            <input id="postPlaca" class="form-control" maxlength="10" placeholder="ABC1D23" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Modelo</label>
+                            <input id="postModelo" class="form-control" maxlength="100" placeholder="Honda CG 160" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <input id="postStatus" class="form-control" maxlength="30" placeholder="ATIVA" />
+                        </div>
+                    </div>
+                    <button class="btn btn-success mt-3" data-op="post">
+                        <i class="bi bi-plus-circle"></i> Criar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PUT -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <span class="badge text-bg-warning text-dark">PUT</span>
+                    <code>/api/v1/motos/{id}</code>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">ID</label>
+                            <input id="putId" type="number" min="1" class="form-control" placeholder="1" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Placa</label>
+                            <input id="putPlaca" class="form-control" maxlength="10" placeholder="ABC1D23" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Modelo</label>
+                            <input id="putModelo" class="form-control" maxlength="100" placeholder="Honda CG 160 Start" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <input id="putStatus" class="form-control" maxlength="30" placeholder="EM_MANUTENCAO" />
+                        </div>
+                    </div>
+                    <button class="btn btn-warning mt-3" data-op="put">
+                        <i class="bi bi-arrow-repeat"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DELETE -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <span class="badge text-bg-danger">DELETE</span>
+                    <code>/api/v1/motos/{id}</code>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">ID</label>
+                        <input id="delId" type="number" min="1" class="form-control" placeholder="1" />
+                    </div>
+                    <button class="btn btn-danger" data-op="delete">
+                        <i class="bi bi-trash"></i> Apagar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request / Response -->
+    <div class="row g-4 mt-1">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light"><strong>Request</strong></div>
+                <div class="card-body">
+                    <pre id="req" class="console"></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light d-flex justify-content-between">
+                    <strong>Response</strong>
+                    <small id="meta" class="text-muted"></small>
+                </div>
+                <div class="card-body">
+                    <!-- tabela dinâmica para GET all -->
+                    <div id="tableBox" class="table-responsive d-none">
+                        <table class="table table-sm table-striped align-middle mb-3">
+                            <thead>
+                            <tr><th>ID</th><th>Placa</th><th>Modelo</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                    <pre id="res" class="console"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- cURL -->
+    <div class="card shadow-sm my-4">
+        <div class="card-header bg-light d-flex justify-content-between">
+            <strong>cURL</strong>
+            <button id="copyCurl" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clipboard"></i> Copiar</button>
+        </div>
+        <div class="card-body">
+            <pre id="curl" class="console"></pre>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index:11">
+        <div id="toast" class="toast align-items-center text-bg-dark border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMsg">Pronto!</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="border-top py-3 text-center text-muted">
+    <small>UI de testes para a Sprint 3 — use apenas para demonstração.</small>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const $ = (id) => document.getElementById(id);
+
+    // Preferências
+    const storage = {
+      load() {
+        $('baseUrl').value = localStorage.getItem('baseUrl') || '';
+        $('user').value    = localStorage.getItem('user') || 'admin';
+        $('pass').value    = localStorage.getItem('pass') || 'admin';
+      },
+      save() {
+        localStorage.setItem('baseUrl', $('baseUrl').value.trim());
+        localStorage.setItem('user', $('user').value);
+        localStorage.setItem('pass', $('pass').value);
+        toast('Preferências salvas.');
+      }
+    };
+
+    // Helpers
+    function joinUrl(base, path){
+      const b = (base || '').replace(/\/+$/, '');
+      return (b ? b : '') + path;
+    }
+    function authHeader(){
+      return 'Basic ' + btoa(($('user').value||'') + ':' + ($('pass').value||''));
+    }
+    function pretty(o){ try{ return JSON.stringify(o, null, 2); }catch{return String(o)} }
+    function curlOf({method,url,headers,body}){
+      const lines=[`curl -i -X ${method} "${url}"`];
+      Object.entries(headers||{}).forEach(([k,v])=>lines.push(`  -H "${k}: ${v}"`));
+      if(body) lines.push(`  -d '${JSON.stringify(body)}'`);
+      return lines.join(' \\\n');
+    }
+    function toast(msg){
+      $('toastMsg').textContent = msg;
+      const t = new bootstrap.Toast($('toast'));
+      t.show();
+    }
+
+    // Renderização de tabela para GET all
+    function renderTableIfArray(data){
+      const box = $('tableBox');
+      const body = $('tableBody');
+      body.innerHTML = '';
+      if(Array.isArray(data) && data.length){
+        box.classList.remove('d-none');
+        data.forEach(m => {
+          const tr = document.createElement('tr');
+          const badge = (s) => {
+            if(!s) return '-';
+            const n = (''+s).toUpperCase();
+            let cls = 'text-bg-secondary';
+            if(n.includes('ATIVA')) cls='text-bg-success';
+            else if(n.includes('MANUT')) cls='text-bg-warning';
+            else if(n.includes('INAT')) cls='text-bg-secondary';
+            tr.innerHTML = `
+              <td>${m.id ?? '-'}</td>
+              <td><code>${m.placa ?? '-'}</code></td>
+              <td>${m.modelo ?? '-'}</td>
+              <td><span class="badge ${cls}">${m.status ?? '-'}</span></td>`;
+          };
+          badge(m.status);
+          body.appendChild(tr);
+        });
+        return true;
+      }
+      box.classList.add('d-none');
+      return false;
+    }
+
+    // Chamada central
+    async function callApi(method, path, body){
+      const base = $('baseUrl').value.trim();
+      const url  = joinUrl(base, path);
+      const headers = { 'Authorization': authHeader() };
+      if(body) headers['Content-Type'] = 'application/json';
+
+      const reqView = { method, url, headers, body: body || null };
+      $('req').textContent  = pretty(reqView);
+      $('curl').textContent = curlOf(reqView);
+
+      const t0 = performance.now();
+      try{
+        const resp = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+        const ms = Math.round(performance.now() - t0);
+        const ct = resp.headers.get('content-type') || '';
+        let payload;
+        if(ct.includes('application/json')) payload = await resp.json();
+        else payload = await resp.text();
+
+        $('meta').textContent = `${resp.status} ${resp.statusText} • ${ms}ms`;
+
+        // Se for GET all e vier array, mostra tabela; mantém JSON abaixo
+        const showedTable = renderTableIfArray(payload);
+        $('res').textContent = typeof payload === 'string' ? payload : pretty(payload);
+        if(showedTable) $('res').textContent += '\n\n// JSON completo acima';
+
+        // Mensagens amigáveis
+        if(method==='POST' && resp.status===201) toast('Criado com sucesso.');
+        if(method==='PUT'){
+          if(resp.ok) toast('Atualizado com sucesso.');
+          else if(resp.status===404) toast('ID não encontrado.');
+          else if(resp.status===409) toast('Conflito (placa duplicada).');
+        }
+        if(method==='DELETE'){
+          if(resp.ok) toast('Removido com sucesso.');
+          else if(resp.status===404) toast('ID não encontrado para exclusão.');
+        }
+      }catch(e){
+        $('meta').textContent = 'Erro de rede';
+        $('res').textContent = e.message || String(e);
+        toast('Falha de rede. Verifique a URL e a API.');
+      }
+    }
+
+    // Ações
+    document.querySelectorAll('[data-op]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const op = btn.dataset.op;
+        if(op==='list') return callApi('GET','/api/v1/motos');
+        if(op==='get'){
+          const id = +$('getId').value; if(!id) return toast('Informe um ID válido.');
+          return callApi('GET', `/api/v1/motos/${id}`);
+        }
+        if(op==='post'){
+          const placa=$('postPlaca').value.trim(), modelo=$('postModelo').value.trim(), status=$('postStatus').value.trim();
+          if(!placa||!modelo||!status) return toast('Preencha placa, modelo e status.');
+          return callApi('POST','/api/v1/motos',{placa,modelo,status});
+        }
+        if(op==='put'){
+          const id=+$('putId').value, placa=$('putPlaca').value.trim(), modelo=$('putModelo').value.trim(), status=$('putStatus').value.trim();
+          if(!id) return toast('Informe um ID válido.');
+          if(!placa||!modelo||!status) return toast('Preencha placa, modelo e status.');
+          return callApi('PUT', `/api/v1/motos/${id}`, {placa,modelo,status});
+        }
+        if(op==='delete'){
+          const id=+$('delId').value; if(!id) return toast('Informe um ID válido.');
+          return callApi('DELETE', `/api/v1/motos/${id}`);
+        }
+      });
+    });
+
+    $('copyCurl').addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText($('curl').textContent); toast('cURL copiado!'); }
+      catch{ toast('Não foi possível copiar.'); }
+    });
+
+    $('saveEnv').addEventListener('click', storage.save);
+    storage.load();
+</script>
+</body>
+</html>
