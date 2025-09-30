@@ -10,8 +10,9 @@
 API simples para gestão de **motos** (CRUD) construída com **Spring Boot** e banco **Azure SQL**.  
 O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observabilidade usa **Application Insights**.
 
-> **URL pública** (exemplo): `https://cloudsprint3-rm556620.azurewebsites.net`  
-> **Swagger UI**: `/swagger-ui/index.html` · **OpenAPI**: `/v3/api-docs`
+⚙️ Opção Escolhida
+A equipe optou pela **Opção 2 – Serviço de Aplicativo (App Service + Azure SQL)**, modelo **PaaS**.  
+A aplicação foi publicada em um **Azure App Service (Linux)** conectado a um **Azure SQL Database**, atendendo aos requisitos da disciplina.
 
 ---
 
@@ -27,7 +28,6 @@ O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observ
 - [Coleção Postman](#-coleção-postman)
 - [Exemplos de requisição](#-exemplos-de-requisição)
 - [Resolução de problemas](#-resolução-de-problemas)
-- [Licença](#-licença)
 
 ---
 
@@ -99,36 +99,6 @@ Base path: `/api/v1`
 
 ---
 
-## ▶️ Como executar localmente
-
-### Pré-requisitos
-- JDK 17+
-- Maven 3.9+
-
-### Usando H2 (memória)
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=h2
-# Swagger: http://localhost:8080/swagger-ui/index.html
-# H2 Console: http://localhost:8080/h2-console  (JDBC URL: jdbc:h2:mem:testdb)
-```
-
-### Usando SQL Server (local/Azure)
-Configure `src/main/resources/application.properties` (ou via variáveis de ambiente):
-```
-spring.datasource.url=jdbc:sqlserver://<server>.database.windows.net:1433;database=<db>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
-spring.datasource.username=<usuario>
-spring.datasource.password=<senha>
-spring.jpa.hibernate.ddl-auto=update
-```
-
-Execute:
-```bash
-mvn clean package -DskipTests
-java -jar target/sprint3-sqlserver-0.0.1-SNAPSHOT.jar
-```
-
----
-
 ## ☁️ Configuração no Azure
 
 1) **App Service (Linux)** e **Azure SQL** (via CLI/Portal).  
@@ -144,16 +114,115 @@ java -jar target/sprint3-sqlserver-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 🚀 Fluxo de CI/CD
+# 🚀 Deploy no Azure (Portal + Cloud Shell)
 
-GitHub Action (`.github/workflows/main_cloudsprint3-rm556620.yml`):
+## ✅ Pré-requisitos
+- Assinatura válida no Azure.
+- Repositório no GitHub com o workflow de deploy configurado.
+- Script `deploy-cloud-marcus.sh` na raiz do projeto (ou disponível para upload).
 
-- **Build:** `mvn -B -DskipTests package`
-- **Artefato:** `target/*.jar`
-- **Deploy:** `azure/webapps-deploy@v2` usando o secret `AZURE_WEBAPP_PUBLISH_PROFILE`  
-  (pegue o XML em **App Service → Get publish profile** e salve como secret).
+---
 
-> O App Service executa o jar como `app.jar`. O Manifest do jar é configurado pelo `spring-boot-maven-plugin`.
+## 1) Acessar o Portal & abrir o Cloud Shell
+1. Entre em https://portal.azure.com  
+2. Clique no ícone **Cloud Shell** (topo direito) e escolha **Bash** (ou PowerShell, se preferir).
+
+---
+
+## 2) Enviar e executar o script de provisionamento
+No Cloud Shell:
+```bash
+# 2.1) Faça upload do arquivo `deploy-cloud-marcus.sh` (botão Upload/Download)
+# 2.2) Dê permissão e execute:
+chmod +x ./deploy-cloud-marcus.sh
+./deploy-cloud-marcus.sh
+```
+
+O script irá:
+- Criar **Resource Group**, **App Service Plan (Linux)**, **Web App**, **Azure SQL Database** e **Application Insights**  
+- Configurar **App Settings** (JDBC/credenciais)  
+- Exibir informações úteis (nome do App, região, etc.)
+
+> Aguarde o término. Não feche o Cloud Shell até ver a conclusão.
+
+---
+
+## 3) Configurar o GitHub Actions (Publish Profile)
+1. No **App Service** criado → **Get publish profile** (Obter perfil de publicação).  
+2. Copie o **XML** gerado.  
+3. No **GitHub** do projeto → **Settings → Secrets and variables → Actions → New repository secret**.  
+4. Crie/atualize o secret:
+   - **Name:** `AZURE_WEBAPP_PUBLISH_PROFILE`  
+   - **Value:** *(cole o XML copiado)*
+
+---
+
+## 4) Confirmar o workflow de deploy
+- Verifique se o arquivo do workflow aponta para o **mesmo nome de Web App** criado pelo script.  
+- O job de deploy deve usar a action:
+  ```yaml
+  - name: Deploy to Azure WebApp
+    uses: azure/webapps-deploy@v2
+    with:
+      app-name: <nome-do-seu-app-service>
+      publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+      package: target/*.jar
+  ```
+- Se necessário, **commite** qualquer ajuste para disparar o pipeline, ou acione **Re-run jobs** em **Actions**.
+
+---
+
+## 5) Acompanhar o deploy
+- GitHub → **Actions** → selecione o workflow de deploy → monitore os logs até **Success**.  
+- No Azure Portal, confira em **App Service → Deployment Center / Logs**.
+
+---
+
+## 6) Validar a aplicação em produção
+- URL do App (ex.):  
+  ```
+  https://<SEU-APP>.azurewebsites.net
+  ```
+- Swagger UI:
+  ```
+  https://<SEU-APP>.azurewebsites.net/swagger-ui/index.html
+  ```
+- Testes rápidos (cURL):
+  ```bash
+  # CREATE
+  curl -X POST "https://<SEU-APP>.azurewebsites.net/api/v1/motos"     -H "Content-Type: application/json"     -d '{"placa":"ABC1D23","modelo":"Honda CG 160","status":"ATIVA"}'
+
+  # LIST
+  curl "https://<SEU-APP>.azurewebsites.net/api/v1/motos"
+  ```
+
+---
+
+## 🧯 Troubleshooting rápido
+- **403/Timeout na API:** verifique **SPRING_DATASOURCE_URL/USERNAME/PASSWORD** e **firewall do Azure SQL**.  
+- **Falha no deploy:** confira se o secret `AZURE_WEBAPP_PUBLISH_PROFILE` está correto e se o **nome do app** bate com o do workflow.  
+- **Jar inválido:** gere novamente com:
+  ```bash
+  mvn -B -DskipTests package
+  ```
+- **Logs de aplicação:** em **App Service → Log stream** ou em **Application Insights**.
+
+---
+
+## 🔐 Boas práticas (produção)
+- Mantenha credenciais em **Secrets/App Settings** (nunca no repositório).  
+- Habilite **HTTPS Only** no App Service.  
+- Restrinja o **firewall** do Azure SQL (evite regra ampla em produção).  
+- Use **Slots de Deploy** para zero-downtime (opcional).
+
+---
+
+## 🧹 Limpeza (opcional)
+Para remover todos os recursos criados (atenção: ação destrutiva):
+```bash
+az group delete -n <SEU_RESOURCE_GROUP> --yes --no-wait
+```
+
 
 ---
 
@@ -181,15 +250,6 @@ CREATE TABLE IF NOT EXISTS motos (
   created_at DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
 );
 ```
-
----
-
-## 🧪 Coleção Postman
-
-- Baixe a coleção pronta: **CloudSprint3.postman_collection.json** (neste repositório).  
-- Defina a variável `host` no Postman: `https://cloudsprint3-rm556620.azurewebsites.net` (ou `http://localhost:8080`).
-
-> Use **environments** para alternar entre **local** e **azure**.
 
 ---
 
@@ -236,22 +296,6 @@ DELETE {{host}}/api/v1/motos/1
 
 ---
 
-## 🛠 Resolução de problemas
-
-- **Swagger abre mas a raiz `"/"` dá 404**: use `/swagger-ui/index.html`.  
-  (Opcional: crie um `HomeController` que redireciona `/` → Swagger.)
-
-- **Erro “no main manifest attribute” no Azure**:  
-  Garanta que o jar foi gerado pelo `spring-boot-maven-plugin` e que o deploy apontou para `target/*.jar`.
-
-- **Sem conexão com banco**:  
-  Revise `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`. No Azure SQL, confirme a **regra de firewall**.
-
-- **H2 falha com tipos do SQL Server**:  
-  Rode com `-Dspring-boot.run.profiles=h2` ou use script específico para H2.
-
----
-
-## 📄 Licença
-
-MIT — faça bom uso! :)
+👥 Desenvolvedores
+Marcus Vinicius de Souza Calazans — RM: 556620
+Lucas Abud Berbel — RM: 557957
