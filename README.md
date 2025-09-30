@@ -7,13 +7,6 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
-## ⚙️ Opção Escolhida
-A equipe optou pela **Opção 2 – Serviço de Aplicativo (App Service + Azure SQL)**, modelo **PaaS**.  
-A aplicação foi publicada em um **Azure App Service (Linux)** conectado a um **Azure SQL Database**, atendendo aos requisitos da disciplina.
-
----
-
-## 📌 Descrição
 API simples para gestão de **motos** (CRUD) construída com **Spring Boot** e banco **Azure SQL**.  
 O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observabilidade usa **Application Insights**.
 
@@ -23,26 +16,25 @@ O deploy é realizado no **Azure App Service** via **GitHub Actions** e a observ
 ---
 
 ## 📚 Sumário
-- [Arquitetura](#-arquitetura)  
-- [Tecnologias](#-tecnologias)  
-- [Endpoints](#-endpoints)  
-- [Como executar localmente](#-como-executar-localmente)  
-- [Configuração no Azure](#-configuração-no-azure)  
-- [Fluxo de CI/CD](#-fluxo-de-cicd)  
-- [Modelo de dados](#-modelo-de-dados)  
-- [Coleção Postman](#-coleção-postman)  
-- [Exemplos de requisição](#-exemplos-de-requisição)  
-- [Scripts](#-scripts)  
-- [Evidências em vídeo](#-evidências-em-vídeo)  
-- [Conformidade com requisitos](#-conformidade-com-requisitos)  
-- [Resolução de problemas](#-resolução-de-problemas)  
-- [Licença](#-licença)  
+
+- [Arquitetura](#-arquitetura)
+- [Tecnologias](#-tecnologias)
+- [Endpoints](#-endpoints)
+- [Como executar localmente](#-como-executar-localmente)
+- [Configuração no Azure](#-configuração-no-azure)
+- [Fluxo de CI/CD](#-fluxo-de-cicd)
+- [Modelo de dados](#-modelo-de-dados)
+- [Coleção Postman](#-coleção-postman)
+- [Exemplos de requisição](#-exemplos-de-requisição)
+- [Resolução de problemas](#-resolução-de-problemas)
+- [Licença](#-licença)
 
 ---
 
 ## 🏗 Arquitetura
 
 ### Diagrama lógico (Mermaid)
+
 ```mermaid
 flowchart LR
   subgraph GitHub["GitHub"]
@@ -64,140 +56,202 @@ flowchart LR
   GH -->|Publish Profile secret| WEBAPP
   WEBAPP -->|JDBC SQL| SQL
   WEBAPP --> AI
-🧰 Tecnologias
-Java 17 · Spring Boot 3.3.5
+```
 
-Spring Web, Validation, Spring Data JPA
+> Dica: para múltiplas linhas no Mermaid em nós, use `<br/>` nos rótulos.
 
-Driver com.microsoft.sqlserver:mssql-jdbc
+---
 
-Swagger/OpenAPI via springdoc-openapi
+## 🧰 Tecnologias
 
-H2 para testes locais (profile h2)
+- **Java 17** · **Spring Boot 3.3.5**
+- **Spring Web**, **Validation**, **Spring Data JPA**
+- **Driver** `com.microsoft.sqlserver:mssql-jdbc`
+- **Swagger/OpenAPI** via `springdoc-openapi`
+- **H2** para testes locais (profile `h2`)
+- **Azure**: App Service (Linux), Azure SQL, Application Insights
+- **CI/CD**: GitHub Actions (deploy por Publish Profile)
 
-Azure: App Service (Linux), Azure SQL, Application Insights
+---
 
-CI/CD: GitHub Actions (deploy por Publish Profile)
+## 🔗 Endpoints
 
-🔗 Endpoints
-Base path: /api/v1
+Base path: `/api/v1`
 
-Método	Caminho	Descrição
-GET	/motos	Lista todas
-GET	/motos/{id}	Busca por ID
-POST	/motos	Cria uma moto
-PUT	/motos/{id}	Atualiza uma moto
-DELETE	/motos/{id}	Remove uma moto
+| Método | Caminho              | Descrição               |
+|-------:|----------------------|-------------------------|
+| GET    | `/motos`             | Lista todas             |
+| GET    | `/motos/{id}`        | Busca por ID            |
+| POST   | `/motos`             | Cria uma moto           |
+| PUT    | `/motos/{id}`        | Atualiza uma moto       |
+| DELETE | `/motos/{id}`        | Remove uma moto         |
 
-▶️ Como executar localmente
-Pré-requisitos
-JDK 17+
+**Modelo (request/response):**
+```json
+{
+  "id": 1,
+  "placa": "ABC1D23",
+  "modelo": "Honda CG 160",
+  "status": "ATIVA",
+  "createdAt": "2025-09-27T12:34:56-03:00"
+}
+```
 
-Maven 3.9+
+---
 
-Usando H2 (memória)
-bash
-Copiar código
+## ▶️ Como executar localmente
+
+### Pré-requisitos
+- JDK 17+
+- Maven 3.9+
+
+### Usando H2 (memória)
+```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=h2
 # Swagger: http://localhost:8080/swagger-ui/index.html
 # H2 Console: http://localhost:8080/h2-console  (JDBC URL: jdbc:h2:mem:testdb)
-Usando SQL Server (local/Azure)
-Configurar em src/main/resources/application.properties ou via variáveis de ambiente:
+```
 
-ini
-Copiar código
+### Usando SQL Server (local/Azure)
+Configure `src/main/resources/application.properties` (ou via variáveis de ambiente):
+```
 spring.datasource.url=jdbc:sqlserver://<server>.database.windows.net:1433;database=<db>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
 spring.datasource.username=<usuario>
 spring.datasource.password=<senha>
 spring.jpa.hibernate.ddl-auto=update
-Executar:
+```
 
-bash
-Copiar código
+Execute:
+```bash
 mvn clean package -DskipTests
 java -jar target/sprint3-sqlserver-0.0.1-SNAPSHOT.jar
-☁️ Configuração no Azure
-Criar Resource Group, App Service Plan (Linux), Azure SQL Database e Application Insights.
+```
 
-Definir App Settings no App Service:
+---
 
-SPRING_DATASOURCE_URL
+## ☁️ Configuração no Azure
 
-SPRING_DATASOURCE_USERNAME
+1) **App Service (Linux)** e **Azure SQL** (via CLI/Portal).  
+2) **App Settings** no App Service:
+   - `SPRING_DATASOURCE_URL`
+   - `SPRING_DATASOURCE_USERNAME`
+   - `SPRING_DATASOURCE_PASSWORD`
+   - (Opcional) `APPLICATIONINSIGHTS_CONNECTION_STRING`
 
-SPRING_DATASOURCE_PASSWORD
+3) **Firewall do Azure SQL**: libere acesso para o App Service (ou use Private Endpoint).
 
-(Opcional) APPLICATIONINSIGHTS_CONNECTION_STRING
+> A criação automatizada (RG, SQL, WebApp, Insights) pode ser feita com o script `deploy-cloud-*.sh`.
 
-Configurar firewall do Azure SQL para liberar acesso do App Service.
+---
 
-Deploy automatizado com o script deploy-cloud-*.sh.
+## 🚀 Fluxo de CI/CD
 
-🚀 Fluxo de CI/CD
-Build: mvn -B -DskipTests package
+GitHub Action (`.github/workflows/main_cloudsprint3-rm556620.yml`):
 
-Artefato: target/*.jar
+- **Build:** `mvn -B -DskipTests package`
+- **Artefato:** `target/*.jar`
+- **Deploy:** `azure/webapps-deploy@v2` usando o secret `AZURE_WEBAPP_PUBLISH_PROFILE`  
+  (pegue o XML em **App Service → Get publish profile** e salve como secret).
 
-Deploy: azure/webapps-deploy@v2 usando secret AZURE_WEBAPP_PUBLISH_PROFILE
+> O App Service executa o jar como `app.jar`. O Manifest do jar é configurado pelo `spring-boot-maven-plugin`.
 
-🗃 Modelo de dados
-Tabela MOTOS:
+---
 
-id (PK), placa (UK), modelo, status, created_at
+## 🗃 Modelo de dados
 
-🧪 Coleção Postman
-Arquivo CloudSprint3.postman_collection.json no repositório.
+### Diagrama ER (Mermaid)
+```mermaid
+erDiagram
+  MOTOS {
+    BIGINT id PK
+    VARCHAR placa UK
+    VARCHAR modelo
+    VARCHAR status
+    DATETIMEOFFSET created_at
+  }
+```
 
-Variável host: http://localhost:8080 ou https://cloudsprint3-rm556620.azurewebsites.net
+### SQL de referência
+```sql
+CREATE TABLE IF NOT EXISTS motos (
+  id BIGINT IDENTITY(1,1) PRIMARY KEY,
+  placa VARCHAR(10) NOT NULL UNIQUE,
+  modelo VARCHAR(80) NOT NULL,
+  status VARCHAR(30) NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
+);
+```
 
-📬 Exemplos de requisição
-http
-Copiar código
+---
+
+## 🧪 Coleção Postman
+
+- Baixe a coleção pronta: **CloudSprint3.postman_collection.json** (neste repositório).  
+- Defina a variável `host` no Postman: `https://cloudsprint3-rm556620.azurewebsites.net` (ou `http://localhost:8080`).
+
+> Use **environments** para alternar entre **local** e **azure**.
+
+---
+
+## 📬 Exemplos de requisição
+
+### Criar
+```http
 POST {{host}}/api/v1/motos
 Content-Type: application/json
+
 {
   "placa": "ABC1D23",
   "modelo": "Honda CG 160",
   "status": "ATIVA"
 }
-(mais exemplos no repositório e no vídeo)
+```
 
-📂 Scripts
-script_bd.sql → DDL da tabela motos e inserts de exemplo
+### Listar
+```http
+GET {{host}}/api/v1/motos
+```
 
-deploy-cloud-marcus.sh → cria RG, App Service, Azure SQL e Insights via CLI
+### Buscar por ID
+```http
+GET {{host}}/api/v1/motos/1
+```
 
-deploycomandos.txt → comandos de execução do script
+### Atualizar
+```http
+PUT {{host}}/api/v1/motos/1
+Content-Type: application/json
 
-🎥 Evidências em vídeo
-O vídeo da entrega mostra:
+{
+  "placa": "ABC1D23",
+  "modelo": "Honda CG 160 Start",
+  "status": "EM_MANUTENCAO"
+}
+```
 
-Clone do repositório
+### Remover
+```http
+DELETE {{host}}/api/v1/motos/1
+```
 
-Deploy via script/CI
+---
 
-Criação e configuração do App Service + Azure SQL
+## 🛠 Resolução de problemas
 
-CRUD completo no sistema e conferência no banco
+- **Swagger abre mas a raiz `"/"` dá 404**: use `/swagger-ui/index.html`.  
+  (Opcional: crie um `HomeController` que redireciona `/` → Swagger.)
 
-✅ Conformidade com requisitos
-Banco em nuvem (Azure SQL) ✅
+- **Erro “no main manifest attribute” no Azure**:  
+  Garanta que o jar foi gerado pelo `spring-boot-maven-plugin` e que o deploy apontou para `target/*.jar`.
 
-CRUD completo com registros reais ✅
+- **Sem conexão com banco**:  
+  Revise `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`. No Azure SQL, confirme a **regra de firewall**.
 
-Deploy em App Service via CLI/GitHub Actions ✅
+- **H2 falha com tipos do SQL Server**:  
+  Rode com `-Dspring-boot.run.profiles=h2` ou use script específico para H2.
 
-Repositório GitHub com código e documentação ✅
+---
 
-Vídeo com evidência de todas as operações CRUD ✅
+## 📄 Licença
 
-PDF de entrega com nomes, RMs, links e arquitetura ✅
-
-🛠 Resolução de problemas
-Swagger não abre em “/” → acessar /swagger-ui/index.html
-
-Erro “no main manifest attribute” → garantir build via spring-boot-maven-plugin
-
-Conexão com banco falhando → revisar App Settings e firewall do Azure SQL
-
-Incompatibilidade H2/SQL Server → usar -Dspring-boot.run.profiles=h2
+MIT — faça bom uso! :)
