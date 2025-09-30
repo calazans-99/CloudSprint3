@@ -1,0 +1,2 @@
+chmod +x ./deploy-cloud-marcus.sh
+./deploy-cloud-marcus.sh
